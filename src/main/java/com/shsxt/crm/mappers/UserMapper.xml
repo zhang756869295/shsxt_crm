@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shsxt.crm.dao.UserDao">
+  <resultMap id="BaseResultMap" type="com.shsxt.crm.po.User">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="user_name" jdbcType="VARCHAR" property="userName" />
+    <result column="user_pwd" jdbcType="VARCHAR" property="userPwd" />
+    <result column="true_name" jdbcType="VARCHAR" property="trueName" />
+    <result column="email" jdbcType="VARCHAR" property="email" />
+    <result column="phone" jdbcType="VARCHAR" property="phone" />
+    <result column="is_valid" jdbcType="INTEGER" property="isValid" />
+    <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+    <result column="update_date" jdbcType="TIMESTAMP" property="updateDate" />
+  </resultMap>
+  <insert id="save" parameterType="com.shsxt.crm.po.User" useGeneratedKeys="true" keyProperty="id">
+    insert into t_user
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="userName != null">
+        user_name,
+      </if>
+      <if test="userPwd != null">
+        user_pwd,
+      </if>
+      <if test="trueName != null">
+        true_name,
+      </if>
+      <if test="email != null">
+        email,
+      </if>
+      <if test="phone != null">
+        phone,
+      </if>
+      <if test="isValid != null">
+        is_valid,
+      </if>
+      <if test="createDate != null">
+        create_date,
+      </if>
+      <if test="updateDate != null">
+        update_date,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="userName != null">
+        #{userName,jdbcType=VARCHAR},
+      </if>
+      <if test="userPwd != null">
+        #{userPwd,jdbcType=VARCHAR},
+      </if>
+      <if test="trueName != null">
+        #{trueName,jdbcType=VARCHAR},
+      </if>
+      <if test="email != null">
+        #{email,jdbcType=VARCHAR},
+      </if>
+      <if test="phone != null">
+        #{phone,jdbcType=VARCHAR},
+      </if>
+      <if test="isValid != null">
+        #{isValid,jdbcType=INTEGER},
+      </if>
+      <if test="createDate != null">
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateDate != null">
+        #{updateDate,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="update" parameterType="com.shsxt.crm.po.User">
+    update t_user
+    <set>
+      <if test="userName != null">
+        user_name = #{userName,jdbcType=VARCHAR},
+      </if>
+      <if test="userPwd != null">
+        user_pwd = #{userPwd,jdbcType=VARCHAR},
+      </if>
+      <if test="trueName != null">
+        true_name = #{trueName,jdbcType=VARCHAR},
+      </if>
+      <if test="email != null">
+        email = #{email,jdbcType=VARCHAR},
+      </if>
+      <if test="phone != null">
+        phone = #{phone,jdbcType=VARCHAR},
+      </if>
+      <if test="isValid != null">
+        is_valid = #{isValid,jdbcType=INTEGER},
+      </if>
+      <if test="createDate != null">
+        create_date = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateDate != null">
+        update_date = #{updateDate,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+    <sql id="user_columns">
+        id,user_name as userName,user_pwd as userPwd,
+        email,true_name as trueName,is_valid as isValid,create_date as createDate,update_date as updateDate
+    </sql>
+    <select id="queryUserByUserName" resultType="user">
+        select <include refid="user_columns" />
+        from t_user
+        WHERE is_valid=1 and user_name=#{userName}
+    </select>
+
+    <select id="queryById" resultType="user">
+        select <include refid="user_columns" />
+        from t_user
+        where id=#{id} and is_valid=1
+    </select>
+
+    <update id="updateUserPasswordById">
+        update t_user
+        set user_pwd=#{userPwd}
+        where id=#{userId} and is_valid=1
+    </update>
+
+
+    <select id="queryCustomerManagers" resultType="map">
+        SELECT
+          u.id,u.true_name as trueName
+        FROM
+            t_user u
+        LEFT JOIN t_user_role ur ON u.id = ur.user_id
+        LEFT JOIN t_role r ON ur.role_id = r.id
+        WHERE
+            r.role_name = '客户经理'
+        AND r.is_valid = 1
+    </select>
+
+  
+  <resultMap id="BaseResultMap02" type="userDto" extends="BaseResultMap">
+    <result column="role_name" property="roleName"></result>
+    <result column="roleIdStr" property="roleIdStr"></result>
+  </resultMap>
+
+  <sql id="user_columns02">
+    id,user_name ,user_pwd ,
+    email,true_nameis_valid ,create_date ,update_date
+  </sql>
+  <select id="queryUsersByParams" parameterType="userQuery" resultMap="BaseResultMap02">
+     select u.*,GROUP_CONCAT(r.role_name) as role_name,GROUP_CONCAT(r.id) as roleIdStr
+    from t_user  u LEFT JOIN t_user_role ur on u.id=ur.user_id
+    LEFT JOIN t_role r on ur.role_id=r.id
+    <where>
+       u.is_valid=1
+      <if test="null !=userName and userName !='' ">
+        and user_name like concat('%',#{userName},'%')
+      </if>
+      <if test="null !=email and email !='' ">
+        and email =#{email}
+      </if>
+      <if test="null !=phone and phone !='' ">
+        and phone =#{phone}
+      </if>
+    </where>
+    GROUP BY u.id
+  </select>
+
+
+  <update id="deleteBatch">
+      update t_user
+      set is_valid=0
+      where id in
+      <foreach collection="array" item="item" open="(" separator="," close=")">
+        #{item}
+      </foreach>
+  </update>
+
+  <select id="queryAllRoleIdsByUserId" resultType="int">
+    SELECT
+    role_id
+    FROM
+    t_user_role
+    WHERE
+    user_id = #{userId}
+  </select>
+</mapper>
